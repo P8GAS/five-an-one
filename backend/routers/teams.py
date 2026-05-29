@@ -20,6 +20,19 @@ NBAHTTP.headers = {
 
 router = APIRouter(prefix="/teams", tags=["Teams"])
 
+@router.get("/")
+def get_teams():
+    cache_key = "all_teams"
+    cached = get_cache(cache_key)
+    if cached:
+        return cached
+    
+    all_teams = teams.get_teams()
+
+    set_cache(cache_key, all_teams)
+
+    return sorted(all_teams, key=lambda x: x["full_name"])
+
 @router.get("/search")
 def search(q: str):
     all_teams = teams.get_teams()
@@ -36,21 +49,24 @@ def get_info(team_id: int):
     if cached:
         return cached
     time.sleep(0.6)
+
     info = teamdetails.TeamDetails(team_id=team_id)
     data = info.get_data_frames()[0].to_dict(orient="records")[0]
+
     set_cache(cache_key, data)
+    
     return data
 
-@router.get("/{team_id}/logo")
-def get_logo(team_id: int):
-    cache_key = f"team_logo_{team_id}"
-    cached = get_cache(cache_key)
-    if cached:
-        return cached
-    time.sleep(0.6)
-    url = f"https://cdn.nba.com/logos/nba/{team_id}/primary/L/logo.svg"
-    set_cache(cache_key, {"url": url})
-    return {"url": url}
+# @router.get("/{team_id}/logo")
+# def get_logo(team_id: int):
+#     cache_key = f"team_logo_{team_id}"
+#     cached = get_cache(cache_key)
+#     if cached:
+#         return cached
+#     time.sleep(0.6)
+#     url = f"https://cdn.nba.com/logos/nba/{team_id}/primary/L/logo.svg"
+#     set_cache(cache_key, {"url": url})
+#     return {"url": url}
 
 @router.get("/{team_id}/roster")
 def get_roster(team_id: int):
@@ -59,9 +75,12 @@ def get_roster(team_id: int):
     if cached:
         return cached
     time.sleep(0.6)
+    
     roster = commonteamroster.CommonTeamRoster(team_id=team_id)
     roster = roster.get_data_frames()[0].to_dict(orient="records")
+
     set_cache(cache_key, roster)
+
     return roster
 
 @router.get("/{team_id}/starters")
@@ -70,14 +89,19 @@ def get_starters(team_id: int):
     cached = get_cache(cache_key)
     if cached:
         return cached   
+    time.sleep(0.6)
+    
     log = teamgamelog.TeamGameLog(team_id=team_id, season="2025-26")
     last_game_id = log.get_data_frames()[0].iloc[0]["Game_ID"] or log.get_data_frames()[2].iloc[0]["Game_ID"]
+
+    time.sleep(0.6)
 
     box = boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=last_game_id)
     players = box.get_data_frames()[0]
     starters = players[(players["START_POSITION"] != "") & (players["TEAM_ID"] == team_id)]["PLAYER_ID"].to_list()
 
     set_cache(cache_key, starters)
+
     return starters
 
 @router.get("/{team_id}/card_info")
@@ -86,12 +110,13 @@ def get_card_info(team_id: int):
     cached = get_cache(cache_key)
     if cached:
         return cached
-    time.sleep(0.6)
+
     data = {
-        "logo": get_logo(team_id),
         "info": get_info(team_id),
         "starters": get_starters(team_id)
     }
+
     set_cache(cache_key, data)
+
     return data
 
