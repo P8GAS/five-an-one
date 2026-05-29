@@ -25,7 +25,7 @@ def normalize(name: str) -> str:
 router = APIRouter(prefix="/players", tags=["Players"])
 
 @router.get("/search")
-def search_players(q: str):
+def search(q: str):
     all_players = players.get_players()
     results = [
         p for p in all_players
@@ -34,7 +34,7 @@ def search_players(q: str):
     return results[:10]
 
 @router.get("/{player_id}/info")
-def get_player_info(player_id: int):
+def get_info(player_id: int):
     cache_key = f"player_info_{player_id}"
     cached = get_cache(cache_key)
     if cached:
@@ -46,7 +46,7 @@ def get_player_info(player_id: int):
     return data
 
 @router.get("/{player_id}/stats")
-def get_player_stats(player_id: int, per_mode: str = "PerGame"):
+def get_stats(player_id: int, per_mode: str = "PerGame"):
     cache_key = f"player_stats_{player_id}_{per_mode}"
     cached = get_cache(cache_key)
     if cached:
@@ -56,6 +56,30 @@ def get_player_stats(player_id: int, per_mode: str = "PerGame"):
     data = { 
         "regular_season": log.get_data_frames()[0].to_dict(orient="records"),
         "playoffs": log.get_data_frames()[2].to_dict(orient="records")
+    }
+    set_cache(cache_key, data)
+    return data
+
+@router.get("/{player_id}/headshot")
+def get_headshot(player_id: int):
+    cache_key = f"player_headshot_{player_id}"
+    cached = get_cache(cache_key)
+    if cached:
+        return cached
+    url = f"https://cdn.nba.com/headshots/nba/latest/1040x760/{player_id}.png"
+    set_cache(cache_key, {"url": url})
+    return {"url": url}
+
+@router.get("/{player_id}/card_info")
+def get_card_info(player_id: int):
+    cache_key = f"player_card_info_{player_id}"
+    cached = get_cache(cache_key)
+    if cached:
+        return cached
+    data = {
+        "headshot": get_headshot(player_id),
+        "info": get_info(player_id),
+        "stats": get_stats(player_id, per_mode="PerGame")
     }
     set_cache(cache_key, data)
     return data
