@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from nba_api.stats.static import teams
-from nba_api.stats.endpoints import teamdetails, commonteamroster
+from nba_api.stats.endpoints import teamdetails, commonteamroster, boxscoretraditionalv2, teamgamelog
 from nba_api.library.http import NBAHTTP
 from services.cache import get_cache, set_cache
 import time
@@ -64,6 +64,22 @@ def get_roster(team_id: int):
     set_cache(cache_key, roster)
     return roster
 
+@router.get("/{team_id}/starters")
+def get_starters(team_id: int):
+    cache_key = f"team_starters_{team_id}"
+    cached = get_cache(cache_key)
+    if cached:
+        return cached   
+    log = teamgamelog.TeamGameLog(team_id=team_id, season="2025-26")
+    last_game_id = log.get_data_frames()[0].iloc[0]["Game_ID"] or log.get_data_frames()[2].iloc[0]["Game_ID"]
+
+    box = boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=last_game_id)
+    players = box.get_data_frames()[0]
+    starters = players[(players["START_POSITION"] != "") & (players["TEAM_ID"] == team_id)]["PLAYER_ID"].to_list()
+
+    set_cache(cache_key, starters)
+    return starters
+
 @router.get("/{team_id}/card_info")
 def get_card_info(team_id: int):
     cache_key = f"team_card_info_{team_id}"
@@ -74,7 +90,8 @@ def get_card_info(team_id: int):
     data = {
         "logo": get_logo(team_id),
         "info": get_info(team_id),
-        "roster": get_roster(team_id)
+        "starters": get_starters(team_id)
     }
     set_cache(cache_key, data)
     return data
+
