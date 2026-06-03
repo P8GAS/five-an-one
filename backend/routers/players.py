@@ -60,16 +60,6 @@ def get_stats(player_id: int, per_mode: str = "PerGame"):
     set_cache(cache_key, data)
     return data
 
-@router.get("/{player_id}/headshot")
-def get_headshot(player_id: int):
-    cache_key = f"player_headshot_{player_id}"
-    cached = get_cache(cache_key)
-    if cached:
-        return cached
-    url = f"https://cdn.nba.com/headshots/nba/latest/1040x760/{player_id}.png"
-    set_cache(cache_key, {"url": url})
-    return {"url": url}
-
 @router.get("/{player_id}/card_info")
 def get_card_info(player_id: int):
     cache_key = f"player_card_info_{player_id}"

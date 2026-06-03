@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from nba_api.stats.static import teams
-from nba_api.stats.endpoints import teamdetails, commonteamroster, boxscoretraditionalv2, teamgamelog
+from nba_api.stats.endpoints import teamdetails, commonteamroster, boxscoretraditionalv2, teamgamelog, teamyearbyyearstats
 from nba_api.library.http import NBAHTTP
 from services.cache import get_cache, set_cache
 import time
@@ -57,17 +57,6 @@ def get_info(team_id: int):
     
     return data
 
-# @router.get("/{team_id}/logo")
-# def get_logo(team_id: int):
-#     cache_key = f"team_logo_{team_id}"
-#     cached = get_cache(cache_key)
-#     if cached:
-#         return cached
-#     time.sleep(0.6)
-#     url = f"https://cdn.nba.com/logos/nba/{team_id}/primary/L/logo.svg"
-#     set_cache(cache_key, {"url": url})
-#     return {"url": url}
-
 @router.get("/{team_id}/roster")
 def get_roster(team_id: int):
     cache_key = f"team_roster_{team_id}"
@@ -99,10 +88,29 @@ def get_starters(team_id: int):
     box = boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=last_game_id)
     players = box.get_data_frames()[0]
     starters = players[(players["START_POSITION"] != "") & (players["TEAM_ID"] == team_id)]["PLAYER_ID"].to_list()
-
+    
     set_cache(cache_key, starters)
 
     return starters
+
+@router.get("/{team_id}/year_stats")
+def get_year_stats(team_id: int, season: str = "2025-26"):
+    cache_key = f"team_year_stats_{team_id}_{season}"
+    cached = get_cache(cache_key)
+    if cached:
+        return cached
+    time.sleep(0.6)
+
+    stats = teamyearbyyearstats.TeamYearByYearStats(team_id=team_id)
+    df = stats.get_data_frames()[0]
+    row = df[df["YEAR"] == season].to_dict(orient="records")
+    if not row:
+        return {"wins": 0, "losses": 0}
+    data = {"wins": int(row[0]["WINS"]), "losses": int(row[0]["LOSSES"])}
+
+    set_cache(cache_key, data)
+
+    return data
 
 @router.get("/{team_id}/card_info")
 def get_card_info(team_id: int):
@@ -113,7 +121,8 @@ def get_card_info(team_id: int):
 
     data = {
         "info": get_info(team_id),
-        "starters": get_starters(team_id)
+        "stats": get_year_stats(team_id),
+        "starters": get_starters(team_id),
     }
 
     set_cache(cache_key, data)
