@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { get_team_card_info, get_team_logo } from "../api/teams"
 import { get_headshots } from "../api/players"
 import styles from "./TeamCard.module.css"
 
 export default function TeamCard({ team }) {
+  const cardRef = useRef(null)
   const [card_info, set_card_info] = useState(null)
   const [loading, set_loading] = useState(true)
 
@@ -13,8 +14,30 @@ export default function TeamCard({ team }) {
       .finally(() => set_loading(false))
   }, [team.id])
 
+  const handle_mouse_move = (e) => {
+    const card = cardRef.current
+    if (!card) return
+    const rect = card.getBoundingClientRect()
+    const x = (e.clientX - rect.left) / rect.width   // 0 à 1
+    const y = (e.clientY - rect.top) / rect.height   // 0 à 1
+    const tiltX = (y - 0.5) * -12  // axe X inversé
+    const tiltY = (x - 0.5) * 12   // axe Y inversé
+    card.style.transform = `perspective(800px) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`
+  }
+
+  const handle_mouse_leave = () => {
+    const card = cardRef.current
+    if (!card) return
+    card.style.transform = `perspective(800px) rotateX(0deg) rotateY(0deg)`
+  }
+
   return (
-    <div className={styles.card}>
+    <div 
+      className={styles.card}
+      ref={cardRef}
+      onMouseMove={handle_mouse_move}
+      onMouseLeave={handle_mouse_leave}  
+    >
       <div className={styles.left}>
         <div className={styles.top}>
           <img src={get_team_logo(team.id)} alt={team.full_name} className={styles.logo} />
@@ -56,13 +79,17 @@ export default function TeamCard({ team }) {
 
       {card_info && (
         <div className={styles.starters}>
-          {card_info.starters.map(id => (
-            <img
-              key={id}
-              src={get_headshots(id)}
-              alt={`player ${id}`}
-              className={styles.starter}
-            />
+          {card_info.starters.map(player => (
+            <div key={player.id} className={styles.starterWrapper}>
+              <span className={styles.starterName}>
+                {player.name}
+              </span>
+              <img
+                src={get_headshots(player.id)}
+                alt={player.name}
+                className={styles.starter}
+              />
+            </div>
           ))}
         </div>
       )}

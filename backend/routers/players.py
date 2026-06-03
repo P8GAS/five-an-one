@@ -67,7 +67,6 @@ def get_card_info(player_id: int):
     if cached:
         return cached
     data = {
-        "headshot": get_headshot(player_id),
         "info": get_info(player_id),
         "stats": get_stats(player_id, per_mode="PerGame")
     }

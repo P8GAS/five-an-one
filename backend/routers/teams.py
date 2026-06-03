@@ -87,8 +87,12 @@ def get_starters(team_id: int):
 
     box = boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=last_game_id)
     players = box.get_data_frames()[0]
-    starters = players[(players["START_POSITION"] != "") & (players["TEAM_ID"] == team_id)]["PLAYER_ID"].to_list()
-    
+    starters_id = players[(players["START_POSITION"] != "") & (players["TEAM_ID"] == team_id)]
+    starters = [
+        {"id": int(row["PLAYER_ID"]), "name": row["PLAYER_NAME"]}
+        for _, row in starters_id.iterrows()
+    ]
+
     set_cache(cache_key, starters)
 
     return starters
