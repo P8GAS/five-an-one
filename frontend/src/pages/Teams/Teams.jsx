@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react"
-import { get_teams } from "../api/teams"
-import TeamCard from "../components/TeamCard"
-import styles from "./Home.module.css"
+import { get_teams } from "../../api/teams"
+import TeamCard from "../../components/Teams/TeamCard"
+import styles from "./Teams.module.css"
 
-export default function Home() {
+export default function Teams() {
   const [teams, set_teams] = useState([])
   const [loading, set_loading] = useState(true)
 

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from nba_api.stats.static import players
-from nba_api.stats.endpoints import playergamelog, commonplayerinfo, playercareerstats
+from nba_api.stats.endpoints import commonplayerinfo, playercareerstats, leaguedashplayerstats
 from nba_api.library.http import NBAHTTP
 from services.cache import get_cache, set_cache
 import time
@@ -32,6 +32,23 @@ def search(q: str):
         if normalize(q) in normalize(p["full_name"])
     ]
     return results[:10]
+
+@router.get("/leaders")
+def get_leaders(season: str = "2025-26"):
+    cache_key = f"players_leaders_{season}"
+    cached = get_cache(cache_key)
+    if cached:
+        return cached
+    time.sleep(0.6)
+    stats = leaguedashplayerstats.LeagueDashPlayerStats(
+        season=season,
+        per_mode_detailed="PerGame"
+    )
+    df = stats.get_data_frames()[0]
+    df = df.sort_values("PTS", ascending=False)
+    data = df[["PLAYER_ID", "PLAYER_NAME", "TEAM_ABBREVIATION", "TEAM_ID", "PTS", "REB", "AST", "STL", "BLK", "PLUS_MINUS"]].to_dict(orient="records")
+    set_cache(cache_key, data)
+    return data
 
 @router.get("/{player_id}/info")
 def get_info(player_id: int):

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react"
-import { get_team_card_info, get_team_logo } from "../api/teams"
-import { get_headshots } from "../api/players"
+import { get_team_card_info, get_team_logo } from "../../api/teams"
+import { get_headshots } from "../../api/players"
 import styles from "./TeamCard.module.css"
 
 export default function TeamCard({ team }) {
