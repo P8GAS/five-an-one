@@ -21,7 +21,6 @@
   overflow: hidden;
 }
 
-/* Orbes de lumière en arrière-plan */
 .page::before {
   content: '';
   position: fixed;
