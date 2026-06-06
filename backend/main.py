@@ -24,7 +24,7 @@ async def preheat_cache():
             print(f">>> [{i+1}/{len(to_load)}] {team['full_name']} ✓", flush=True)
         except Exception as e:
             print(f">>> [{i+1}/{len(to_load)}] {team['full_name']} ✗", flush=True)
-        await asyncio.sleep(2)
+        await asyncio.sleep(0.6) 
 
     print(">>> Preheat terminé", flush=True)
 

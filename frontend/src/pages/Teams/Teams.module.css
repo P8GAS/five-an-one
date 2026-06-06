@@ -16,6 +16,7 @@
   min-height: 100vh;
   background: var(--bg);
   padding: 3rem 2rem 5rem;
+  padding-top: 4rem;
   font-family: 'DM Sans', sans-serif;
   position: relative;
   overflow: hidden;
